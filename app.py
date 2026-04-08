@@ -31,7 +31,7 @@ india_df["cases"] = india_df["cases"].replace("NR", 0).astype(int)
 
 # Load trained models
 def load_models():
-    with open("model/models.pkl", "rb") as f:
+    with open("model/dengue_model.pkl", "rb") as f:
         return pickle.load(f)
 
 models = load_models()
