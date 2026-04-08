@@ -1,0 +1,11 @@
+gradio
+pandas
+numpy
+scikit-learn
+xgboost
+matplotlib
+seaborn
+plotly
+python-dotenv
+groq
+shap
