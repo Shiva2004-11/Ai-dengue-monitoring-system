@@ -2,7 +2,6 @@ import gradio as gr
 import pandas as pd
 import pickle
 import plotly.express as px
-import shap
 import matplotlib.pyplot as plt
 
 from utils.preprocessing import load_data
@@ -31,8 +30,11 @@ india_df["state"] = india_df["state"].str.replace("*", "", regex=False).str.stri
 india_df["cases"] = india_df["cases"].replace("NR", 0).astype(int)
 
 # Load trained models
-models = pickle.load(open("model/models.pkl", "rb"))
+def load_models():
+    with open("model/models.pkl", "rb") as f:
+        return pickle.load(f)
 
+models = load_models()
 
 # -----------------------------
 # Visualization Functions 
@@ -307,6 +309,9 @@ def global_tb_map():
 
 def predict_cases(model_name, temp_k, humidity, rainfall, station_temp):
 
+    if model_name not in models:
+        return "⚠️ Please select a valid ML model"
+
     model = models[model_name]
 
     sample = [[temp_k, humidity, rainfall, station_temp]]
@@ -315,7 +320,7 @@ def predict_cases(model_name, temp_k, humidity, rainfall, station_temp):
 
     status, beds, doctors = allocate_resources(prediction)
 
-    result = f"""
+    return f"""
 ### 🧾 Prediction Result
 
 **Predicted Dengue Cases:** {prediction:.2f}
@@ -326,8 +331,6 @@ def predict_cases(model_name, temp_k, humidity, rainfall, station_temp):
 
 **Doctors Needed:** {doctors}
 """
-
-    return result
 
 
 # ------------------------------
@@ -455,6 +458,7 @@ def analyze_patient_symptoms(age, fever, headache, nausea, joint_pain, rash, bod
 # -----------------------------
 
 def explain_model():
+    import shap 
 
     model = models["Random Forest"]
 
@@ -835,7 +839,7 @@ with gr.Blocks() as demo:
                 apply_filters = gr.Button("🔎 Apply Filters")
 
             with gr.Row():
-                map_plot = gr.Plot(value=india_map(year_filter.value, max_cases_filter.value))
+                map_plot = gr.Plot()
 
             with gr.Row():
                 top_states_plot = gr.Plot(value=top_states(year_filter.value, max_cases_filter.value))
@@ -877,9 +881,10 @@ with gr.Blocks() as demo:
                 outputs=[trend_plot, analysis_output]
             )
 
-import os
-demo.launch(
-    server_name="0.0.0.0",
-    server_port=7860,
-    theme=gr.themes.Soft()
-)
+if __name__ == "__main__":
+    import os
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860)),
+        share=False
+    )
